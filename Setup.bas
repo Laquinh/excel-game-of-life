@@ -1,4 +1,6 @@
 Attribute VB_Name = "ModuleSetup"
+Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
+
 Sub CreateSheet()
 	Dim sheet as Worksheet
 	On Error Resume Next
@@ -16,7 +18,8 @@ Sub InitSettings()
 	Range("B3").Value = "Height"
 	Range("B4").Value = "Top-left cell"
 	Range("B5").Value = "Iterations"
-	With Range("B2:B5")
+	Range("B6").Value = "Milliseconds"
+	With Range("B2:B6")
 		.Font.Bold = True
 		.ColumnWidth = .ColumnWidth*2
 	End With
@@ -25,7 +28,8 @@ Sub InitSettings()
 	Range("C3").Value = 50
 	Range("C4").Value = "G8"
 	Range("C5").Value = 10
-	With Range("C2:C5")
+	Range("C6").Value = 1000
+	With Range("C2:C6")
         .HorizontalAlignment = xlRight
 	End With
 End Sub
@@ -140,8 +144,82 @@ Sub CreateTable()
 	Call InitTableFormat(gameRange)
 End Sub
 
+Function CurrentState() As Integer()
+	Dim topLeft As Range
+	Dim width As Integer
+	Dim height As Integer
+	Dim state() As Integer
+
+	Set topLeft = Range(Range("C4"))
+	width = Range("C2").Value
+	height = Range("C3").Value
+	ReDim state (0 to height, 0 to width) As Integer
+
+	For row = 0 To height
+		For column = 0 To width
+			state(row, column) = topLeft.Offset(row, column).Value
+		Next column
+	Next row
+
+	CurrentState = state
+End Function
+
+Function SumOfNeighbors(row As Integer, column As Integer, previousState As Variant) As Integer
+	Dim width As Integer
+	Dim height As Integer
+
+	width = Range("C2").Value
+	height = Range("C3").Value
+
+	SumOfNeighbors = 0
+	For rowOffset = -1 To 1
+		For columnOffset = -1 To 1
+			If Not (rowOffset = 0 And columnOffset = 0) And Not (row + rowOffset < 0 Or row + rowOffset > height - 1 Or column + columnOffset < 0 Or column + columnOffset > width - 1) Then
+				SumOfNeighbors = SumOfNeighbors + previousState(row+rowOffset, column+columnOffset)
+			End If
+		Next columnOffset
+	Next rowOffset
+End Function
+
+Sub UpdateState()
+	Dim topLeft As Range
+	Dim width As Integer
+	Dim height As Integer
+	Dim previousState() as Integer
+
+	Set topLeft = Range(Range("C4"))
+	width = Range("C2").Value
+	height = Range("C3").Value
+	ReDim previousState(0 to height, 0 to width) As Integer
+	
+	previousState = CurrentState()
+
+	Dim row As Integer
+	Dim column As Integer
+
+	For row = 0 To height
+		For column = 0 To width
+			Dim sum As Integer
+			sum = SumOfNeighbors(row, column, previousState)
+
+			If previousState(row, column) = 1 Then
+				If sum < 2 Or sum > 3 Then
+					topLeft.Offset(row, column) = 0
+				End If
+			Else
+				If sum = 3 Then
+					topLeft.Offset(row, column) = 1
+				End If
+			End If
+		Next column
+	Next row
+End Sub
+
 Sub Run()
-	MsgBox "Run"
+	For iteration = 1 To Range("C5").Value
+		UpdateState
+		Sleep(Range("C6").Value)
+	Next iteration
 End Sub
 
 Sub Setup()
