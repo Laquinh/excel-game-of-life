@@ -174,7 +174,12 @@ Function SumOfNeighbors(row As Integer, column As Integer, previousState As Vari
 	SumOfNeighbors = 0
 	For rowOffset = -1 To 1
 		For columnOffset = -1 To 1
-			If Not (rowOffset = 0 And columnOffset = 0) And Not (row + rowOffset < 0 Or row + rowOffset > height - 1 Or column + columnOffset < 0 Or column + columnOffset > width - 1) Then
+			If Not (rowOffset = 0 And columnOffset = 0) _
+				And Not (row + rowOffset < 0 _
+						Or row + rowOffset > height - 1 _
+						Or column + columnOffset < 0 _
+						Or column + columnOffset > width - 1) _
+			Then
 				SumOfNeighbors = SumOfNeighbors + previousState(row+rowOffset, column+columnOffset)
 			End If
 		Next columnOffset
